@@ -3,6 +3,7 @@
 import smbus
 import math
 import csv
+import time
 
 # Power management registers
 power_mgmt_1 = 0x6b
@@ -44,14 +45,14 @@ bus.write_byte_data(address, power_mgmt_1, 0)
 f = open('readings.csv','w')
 col = ['X rot','Y rot','X rot(CF)','Y rot(CF)']#,'X rot(CF)','Y rot(CF)'
 csv.writer(f).writerow(col)
-alpha = 0.02
+alpha = 0.1
 fs = 100.0
 dt=1.0/fs
 
 compfxold = 0.0
 compfyold = 0.0
 
-while True:
+while 1:
 
     gyro_xout = read_word_2c(0x43)
     gyro_yout = read_word_2c(0x45)
@@ -87,8 +88,8 @@ while True:
     xrot = get_x_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
     yrot = get_y_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)
 
-    compfx = (1-alpha) * (compfxold + gyro_xout_scaled * dt) + alpha * (accel_xout_scaled)
-    compfy = (1-alpha) * (compfyold + gyro_yout_scaled * dt) + alpha * (accel_yout_scaled)
+    compfx = (1-alpha) * (compfxold + gyro_xout_scaled * dt) + alpha * (xrot)
+    compfy = (1-alpha) * (compfyold + gyro_yout_scaled * dt) + alpha * (yrot)
 
     compfxold = compfx
     compfyold = compfy
@@ -100,5 +101,7 @@ while True:
     data.append(compfy)
 
     csv.writer(f).writerow(data)
+    
+    time.sleep(dt)
 
 f.close()
