@@ -1,0 +1,387 @@
+#!/usr/bin/python
+
+import smbus
+import math
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+def read_word(adr,address): #считываются значения из регистров
+    high = bus.read_byte_data(address, adr) #Read a single byte from a designated register (i2c_addr, register, force=None)
+    low = bus.read_byte_data(address, adr+1)
+    val = (high << 8) + low
+    return val
+
+def read_word_2c(adr,address): #преобразование значений, представленных в дополнительном коде
+    val = read_word(adr,address)
+    if (val >= 0x8000):
+        return -((65535 - val) + 1)
+    else:
+        return val
+
+def dist(a,b):
+    return math.sqrt((a*a)+(b*b))
+
+def get_y_rotation(x,y,z):
+    radians = math.atan2(x, dist(y,z))
+    return -math.degrees(radians)
+
+def get_x_rotation(x,y,z):
+    radians = math.atan2(y, dist(x,z))
+    return math.degrees(radians)
+
+def activate_addr(address):
+    # This is the address value read via the i2cdetect command
+    # Now wake the 6050 up as it starts in sleep mode
+    for MPU in range(MPUs):
+        register(MPU)
+        bus.write_byte_data(0x70, 0x08, 0)
+    return address
+
+def register(reg):
+    bus.write_byte_data(0x70, regw[reg])
+
+def mpu_data_acquire(reg):
+    register(reg)
+    
+    gyro_xout = read_word_2c(0x43, 0x68)
+    gyro_yout = read_word_2c(0x45, 0x68)
+    gyro_zout = read_word_2c(0x47, 0x68)
+
+    gyro_xout_scaled = gyro_xout/131
+    gyro_yout_scaled = gyro_yout/131
+    gyro_zout_scaled = gyro_zout/131
+
+    accel_xout = read_word_2c(0x3b, 0x68)
+    accel_yout = read_word_2c(0x3d, 0x68)
+    accel_zout = read_word_2c(0x3f, 0x68)
+
+    accel_xout_scaled = accel_xout/16384.0
+    accel_yout_scaled = accel_yout/16384.0
+    accel_zout_scaled = accel_zout/16384.0
+    
+    return gyro_xout_scaled, gyro_yout_scaled, gyro_zout_scaled, accel_xout_scaled, accel_yout_scaled, accel_zout_scaled
+
+def integral_trap(x, xold, dt): #метод трапеции, реализовать дальше, для этого нужно создать
+    #переменную для хранения предыдущего значения гироскопа
+    int_trap = (x + xold)*dt/2
+    return int_trap
+
+def comp_filter_trap(cold, gs, gold, r, t):
+    alpha = 0.05
+    compf = (1-alpha) * (cold + integral_trap(gs,gold,t)) + alpha * (r)
+    return compf
+ 
+# Power management registers
+power_mgmt_1 = 0x6b
+power_mgmt_2 = 0x6c    
+
+bus = smbus.SMBus(1) #bus = smbus.SMBus(1) for Revision 2 boards, (0) for Rev. 1
+address = activate_addr(0x68)    # This activates the 1 MPU address value read via the i2cdetect command and assigns the variable
+#address2 = activate_addr(0x69)    # This activates the 2 MPU the address value read via the i2cdetect command  and assigns the variable
+
+regw = [1000, 1001, 1010, 1011, 1100, 1101, 1110, 1111]
+#regw = [0x00001000, 0x00001001, 0x00001010, 0x00001011, 0x00001100, 0x00001101, 0x00001110, 0x00001111]
+
+now = 0
+at = 0.0
+
+gyroxold = []
+gyroyold = []
+gyrozold = []
+compfxold = []
+compfyold = []
+
+gyrox = []
+gyroy = []
+gyroz = []
+xrot = []
+yrot = []
+
+compfx_ac = []
+compfy_ac = []
+gyroz_ac = []
+
+compfx_0 = []
+compfy_0 = []
+gyroz_0 = []
+
+listcompfx = []
+listcompfy = []
+listgyroz = []
+
+compfx_mpu_0 = []
+compfy_mpu_0 = []
+gyroz_mpu_0 = []
+
+compfx_mpu_1 = []
+compfy_mpu_1 = []
+gyroz_mpu_1 = []
+
+compfx_mpu_2 = []
+compfy_mpu_2 = []
+gyroz_mpu_2 = []
+
+compfx_mpu_3 = []
+compfy_mpu_3 = []
+gyroz_mpu_3 = []
+
+compfx_mpu_4 = []
+compfy_mpu_4 = []
+gyroz_mpu_4 = []
+
+compfx_mpu_5 = []
+compfy_mpu_5 = []
+gyroz_mpu_5 = []
+
+compfx_mpu_6 = []
+compfy_mpu_6 = []
+gyroz_mpu_6 = []
+
+compfx_mpu_7 = []
+compfy_mpu_7 = []
+gyroz_mpu_7 = []
+
+compfx_mpu_8 = []
+compfy_mpu_8 = []
+gyroz_mpu_8 = []
+
+compfx_mpu_9 = []
+compfy_mpu_9 = []
+gyroz_mpu_9 = []
+
+compfx_mpu_10 = []
+compfy_mpu_10 = []
+gyroz_mpu_10 = []
+
+compfx_mpu_11 = []
+compfy_mpu_11 = []
+gyroz_mpu_11 = []
+
+compfx_mpu_12 = []
+compfy_mpu_12 = []
+gyroz_mpu_12 = []
+
+compfx_mpu_13 = []
+compfy_mpu_13 = []
+gyroz_mpu_13 = []
+
+compfx_mpu_14 = []
+compfy_mpu_14 = []
+gyroz_mpu_14 = []
+
+listcompfx.append(compfx_mpu_0)
+listcompfx.append(compfx_mpu_1)
+listcompfx.append(compfx_mpu_2)
+listcompfx.append(compfx_mpu_3)
+listcompfx.append(compfx_mpu_4)
+listcompfx.append(compfx_mpu_5)
+listcompfx.append(compfx_mpu_6)
+listcompfx.append(compfx_mpu_7)
+listcompfx.append(compfx_mpu_8)
+listcompfx.append(compfx_mpu_9)
+listcompfx.append(compfx_mpu_10)
+listcompfx.append(compfx_mpu_11)
+listcompfx.append(compfx_mpu_12)
+listcompfx.append(compfx_mpu_13)
+listcompfx.append(compfx_mpu_14)
+
+listcompfy.append(compfy_mpu_0)
+listcompfy.append(compfy_mpu_1)
+listcompfy.append(compfy_mpu_2)
+listcompfy.append(compfy_mpu_3)
+listcompfy.append(compfy_mpu_4)
+listcompfy.append(compfy_mpu_5)
+listcompfy.append(compfy_mpu_6)
+listcompfy.append(compfy_mpu_7)
+listcompfy.append(compfy_mpu_8)
+listcompfy.append(compfy_mpu_9)
+listcompfy.append(compfy_mpu_10)
+listcompfy.append(compfy_mpu_11)
+listcompfy.append(compfy_mpu_12)
+listcompfy.append(compfy_mpu_13)
+listcompfy.append(compfy_mpu_14)
+
+listgyroz.append(gyroz_mpu_0)
+listgyroz.append(gyroz_mpu_1)
+listgyroz.append(gyroz_mpu_2)
+listgyroz.append(gyroz_mpu_3)
+listgyroz.append(gyroz_mpu_4)
+listgyroz.append(gyroz_mpu_5)
+listgyroz.append(gyroz_mpu_6)
+listgyroz.append(gyroz_mpu_7)
+listgyroz.append(gyroz_mpu_8)
+listgyroz.append(gyroz_mpu_9)
+listgyroz.append(gyroz_mpu_10)
+listgyroz.append(gyroz_mpu_11)
+listgyroz.append(gyroz_mpu_12)
+listgyroz.append(gyroz_mpu_13)
+listgyroz.append(gyroz_mpu_14)
+
+list_at = []
+
+MPUs = 4 #Setting the number of used MPUs
+
+plt.ion()
+fig, ax = plt.subplots(2, MPUs/2, sharex='col', sharey='row')
+
+#input('Place a sensor on a horizontal surface. Press Enter when you are done.')
+
+#Asking the user if we shoul use the code to establish the starting position
+
+start_position = bool(input('Input 1 when you are ready to calibrate sensors for starting position? [1/0]')) 
+
+#Establishing the starting position
+
+if start_position:
+    print('Calibrating the starting position in 3 seconds. Stay still.')
+    
+    time.sleep(3000)
+    
+    #Getting the priori state needed for integration and filtering
+    
+    for MPU in range(MPUs): #This code collects data from all the used MPUs
+        result = mpu_data_acquire(MPU)
+    
+        gyroxold.append(result[0])
+        gyroyold.append(result[1])
+        gyrozold.append(result[2])
+        compfxold.append(get_x_rotation(result[3], result[4], result[5]))
+        compfyold.append(get_y_rotation(result[3], result[4], result[5]))
+    
+    #Each integration uses dt to get the result
+    #Also dt is used generally to compute time at for the plot
+    #dt - is the time between two consecutive measurements from MPU
+    
+    #start always takes the time value at previous measurement
+    #now takes the time value at the current measurement
+        
+    now = time.perf_counter()
+    
+    #A set of calculations to etablish the starting position
+    
+    start_iter = 0 #theoretically it should be possible to use as little as 1 iteration here
+    while start_iter < 10:
+        
+        start = now
+        
+        for MPU in range(MPUs):
+            result = mpu_data_acquire(MPU)
+            
+            gyrox.insert(MPU,result[0])
+            gyroy.insert(MPU,result[1])
+            gyroz.insert(MPU,result[2])
+            xrot.insert(MPU,get_x_rotation(result[3], result[4], result[5]))
+            yrot.insert(MPU,get_y_rotation(result[3], result[4], result[5]))
+            
+        now = time.perf_counter()
+        dt = now - start
+        
+        for MPU in range(MPUs):
+            
+            compfx = comp_filter_trap(compfxold[MPU], gyrox[MPU], gyroxold[MPU], xrot[MPU], dt) #compfxold.pop([MPU]) - test
+            compfy = comp_filter_trap(compfyold[MPU], gyroy[MPU], gyroyold[MPU], yrot[MPU], dt)
+            gyroz = integral_trap(gyroz[MPU], gyrozold[MPU], dt)
+            
+            gyroxold.insert(MPU,result[0])
+            gyroyold.insert(MPU,result[1])
+            gyrozold.insert(MPU,result[2])
+            compfxold.insert(MPU,compfx)
+            compfyold.insert(MPU,compfy)
+            
+            compfx_ac.insert(MPU,compfx) #The value for each MPU from the last calculation is used to determine the starting points
+            compfy_ac.insert(MPU,compfy) #.extent adds the whole (list) to the current list
+            gyroz_ac.insert(MPU,gyroz) # COMBINE WITH THE BEGINNING? DELETE SIMILARITIES?
+        
+        start_iter += 1
+
+    compfx_0.extend(compfx_ac) #The value for each MPU from the last calculation is used to determine the starting points
+    compfy_0.extend(compfy_ac) #.extent adds the whole (list) to the current list
+    gyroz_0.extend(gyroz_ac)
+    
+    for MPU in range(MPUs):
+        listcompfx[MPU].append(compfx_ac[MPU] - compfx_0[MPU]) #This expressions get zero value and is here just to mirror future calculations
+        listcompfy[MPU].append(compfy_ac[MPU] - compfy_0[MPU])
+        listgyroz[MPU].append(gyroz_ac[MPU] - gyroz_0[MPU])
+    
+    list_at.append(at)
+
+print('Start moving sensors.')
+
+tmp = 1 #tmp = True
+while tmp < 1000: #while tmp
+        
+    start = now
+    
+    for MPU in range(MPUs):
+        result_s = mpu_data_acquire(MPU)
+        
+        gyrox.insert(MPU,result_s[0])
+        gyroy.insert(MPU,result_s[1])
+        gyroz.insert(MPU,result_s[2])
+        xrot.insert(MPU,get_x_rotation(result_s[3], result_s[4], result_s[5]))
+        yrot.insert(MPU,get_y_rotation(result_s[3], result_s[4], result_s[5]))
+    
+        now = time.perf_counter()
+        dt = now - start
+        at += dt
+        
+    for MPU in range(MPUs):
+        compfx = comp_filter_trap(compfxold[MPU], gyrox[MPU], gyroxold[MPU], xrot[MPU], dt) #compfxold.pop([MPU]) - test
+        compfy = comp_filter_trap(compfyold[MPU], gyroy[MPU], gyroyold[MPU], yrot[MPU], dt)
+        gyroz = integral_trap(gyroz[MPU], gyrozold[MPU], dt)
+        
+        gyroxold.insert(MPU,result_s[0])
+        gyroyold.insert(MPU,result_s[1])
+        gyrozold.insert(MPU,result_s[2])
+        compfxold.insert(MPU,compfx)
+        compfyold.insert(MPU,compfy)
+        
+        compfx_ac.insert(MPU,compfx) #The value for each MPU from the last calculation is used to determine the starting points
+        compfy_ac.insert(MPU,compfy) #.extent adds the whole (list) to the current list
+        gyroz_ac.insert(MPU,gyroz)
+        
+        listcompfx[MPU].append(compfx_ac[MPU] - compfx_0[MPU]) #This expressions get zero value and is here just to mirror future calculations
+        listcompfy[MPU].append(compfy_ac[MPU] - compfy_0[MPU]) #tmp*MPUs + MPU,
+        listgyroz[MPU].append(gyroz_ac[MPU] - gyroz_0[MPU])
+    
+    list_at.append(at)
+        
+    for MPU in MPUs:
+        ax[MPU//(MPUs/2),MPU%(MPUs/2)].text(0.5, 0.5, 'MPU '+ str(MPU), fontsize=15, ha='center')
+        ax[MPU//(MPUs/2),MPU%(MPUs/2)].plot(list_at, listcompfx[MPU], color="purple", label="X (CF)")
+        ax[MPU//(MPUs/2),MPU%(MPUs/2)].plot(list_at, listcompfy[MPU], color="blue", label="Y (CF)")
+        ax[MPU//(MPUs/2),MPU%(MPUs/2)].plot(list_at, listgyroz[MPU], color="black", label="Z (G)")
+        ax[MPU//(MPUs/2),MPU%(MPUs/2)].legend(fontsize = 10, loc="lower left", frameon=True)
+    
+    plt.show()
+    plt.pause(0.005)
+    
+    tmp += 1
+
+print('Finished reading data.')
+
+"""
+x = np.arange(0, max_x)
+ax.set_ylim(0, max_rand)
+line, = ax.plot(x, np.random.randint(0, max_rand, max_x))
+
+def init():  # give a clean slate to start
+    line.set_ydata([np.nan] * len(x))
+    return line,
+
+def animate(i):  # update the y values (every 1000ms)
+    line.set_ydata(np.random.randint(0, max_rand, max_x))
+    return line,
+
+ani = animation.FuncAnimation(
+    fig, animate, init_func=init, interval=1000, blit=True, save_count=10)
+"""
+
+plt.savefig('testplot.png', bbox_inches = 'tight', pad_inches = 0.1)
+#requires adjustment, now we are saving the file manually from the showed figure after adjusting it
+
+print('Program has finished all calculations, close the plot Figure to stop the execution.')
+
+#To save an animation to disk use Animation.save or Animation.to_html5_video (if we will use matplotlib.animation)
