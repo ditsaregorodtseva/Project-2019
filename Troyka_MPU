@@ -10,7 +10,7 @@ import matplotlib.animation as animation
 def read_word(adr,address): #считываются значения из регистров
     high = bus.read_byte_data(address, adr) #Read a single byte from a designated register (i2c_addr, register, force=None)
     low = bus.read_byte_data(address, adr+1)
-    val = (high << 8) + low
+    val = (high << 8) + low # = high * 2^8 + low
     return val
 
 def read_word_2c(adr,address): #преобразование значений, представленных в дополнительном коде
@@ -36,11 +36,13 @@ def activate_addr(address):
     # Now wake the 6050 up as it starts in sleep mode
     for MPU in range(MPUs):
         register(MPU)
-        bus.write_byte_data(0x70, 0x08, 0)
+        #bus.write_byte_data(0x70, 0x08, 0)
+        bus.write_byte_data(0x68, power_mgmt_1, 0)
     return address
 
 def register(reg):
-    bus.write_byte_data(0x70, regw[reg])
+    #bus.write_byte_data(0x70, regw[reg])
+    bus.write_byte_data(0x70, 0x08, regw[reg])
 
 def mpu_data_acquire(reg):
     register(reg)
@@ -224,7 +226,8 @@ list_at = []
 MPUs = 4 #Setting the number of used MPUs
 
 plt.ion()
-fig, ax = plt.subplots(2, MPUs/2, sharex='col', sharey='row')
+#fig, ax = plt.subplots(2, MPUs/2, sharex='col', sharey='row')
+fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
 
 #input('Place a sensor on a horizontal surface. Press Enter when you are done.')
 
